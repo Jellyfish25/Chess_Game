@@ -1,5 +1,5 @@
 #include "ChessPiece.h"
-#include <QCoreApplication>
+//#include <QCoreApplication>
 class Pawn : public ChessPiece {
 
 public:
@@ -7,9 +7,9 @@ public:
     Pawn(QString color) : ChessPiece(QString(), "Pawn", QImage()) {
         this->color = color;
         this->label = "pawn";
-        QString imagePath = QCoreApplication::applicationDirPath() + "/../../Assets/bP.svg";
-        qDebug() << imagePath;
-        QImage bPImage(imagePath);
+        //QString imagePath = QCoreApplication::applicationDirPath() + "/../../Assets/bP.svg";
+        //qDebug() << imagePath;
+        QImage bPImage("../../Assets/bP.svg");
         QImage wPImage("../../Assets/wP.svg");
         color == "white" ? this->pieceImage = wPImage : pieceImage = bPImage;
 
