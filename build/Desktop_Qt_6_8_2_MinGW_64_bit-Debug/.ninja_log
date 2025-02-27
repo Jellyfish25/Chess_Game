@@ -1,0 +1,21 @@
+# ninja log v6
+4	464	7623243598595109	Chess_Game_autogen/timestamp	38a3ea953ea20f3d
+4	464	7623243598595109	Chess_Game_autogen/mocs_compilation.cpp	38a3ea953ea20f3d
+4	464	7623243598595109	C:/Users/mitko/QtProjects/Chess_Game/build/Desktop_Qt_6_8_2_MinGW_64_bit-Debug/Chess_Game_autogen/timestamp	38a3ea953ea20f3d
+4	464	7623243598595109	C:/Users/mitko/QtProjects/Chess_Game/build/Desktop_Qt_6_8_2_MinGW_64_bit-Debug/Chess_Game_autogen/mocs_compilation.cpp	38a3ea953ea20f3d
+467	1653	7623243599230970	CMakeFiles/Chess_Game.dir/Chess_Game_autogen/mocs_compilation.cpp.obj	e52928a211f577f8
+469	1684	7623243599250989	CMakeFiles/Chess_Game.dir/main.cpp.obj	8be552ac0efa8ef8
+1722	1836	7623243611774389	Chess_Game.exe	da9b16271b6a82cc
+471	1722	7623243599271137	CMakeFiles/Chess_Game.dir/mainwindow.cpp.obj	fbf2645df2a84be8
+30	48	7623244635771026	CMakeFiles/clean.additional	baedbe210acaa455
+48	54	7623244635951085	clean	577b940aee94fbd7
+20	492	7623244640808392	Chess_Game_autogen/timestamp	38a3ea953ea20f3d
+20	492	7623244640808392	Chess_Game_autogen/mocs_compilation.cpp	38a3ea953ea20f3d
+20	492	7623244640808392	C:/Users/mitko/QtProjects/Chess_Game/build/Desktop_Qt_6_8_2_MinGW_64_bit-Debug/Chess_Game_autogen/timestamp	38a3ea953ea20f3d
+20	492	7623244640808392	C:/Users/mitko/QtProjects/Chess_Game/build/Desktop_Qt_6_8_2_MinGW_64_bit-Debug/Chess_Game_autogen/mocs_compilation.cpp	38a3ea953ea20f3d
+499	1372	7623244641433676	CMakeFiles/Chess_Game.dir/chesspiece.cpp.obj	d0d998fbaecdd30f
+501	1570	7623244641453660	CMakeFiles/Chess_Game.dir/Pawn.cpp.obj	7f23f24c5e290051
+492	1699	7623244641373641	CMakeFiles/Chess_Game.dir/Chess_Game_autogen/mocs_compilation.cpp.obj	e52928a211f577f8
+494	1728	7623244641393637	CMakeFiles/Chess_Game.dir/main.cpp.obj	8be552ac0efa8ef8
+496	2178	7623244641413668	CMakeFiles/Chess_Game.dir/mainwindow.cpp.obj	fbf2645df2a84be8
+2178	2364	7623244658228672	Chess_Game.exe	f9ee947608e15e83
