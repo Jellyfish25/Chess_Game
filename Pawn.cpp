@@ -1,18 +1,15 @@
 #include "ChessPiece.h"
-//#include <QCoreApplication>
-class Pawn : public ChessPiece {
 
+class Pawn : public ChessPiece {
 public:
     //override the pieceImage to a pawn image
-    Pawn(QString color) : ChessPiece(QString(), "Pawn", QImage()) {
-        this->color = color;
-        this->label = "pawn";
+    Pawn(QString color) : ChessPiece(color, "Pawn", QImage()) {
         //QString imagePath = QCoreApplication::applicationDirPath() + "/../../Assets/bP.svg";
         //qDebug() << imagePath;
-        QImage bPImage("../../Assets/bP.svg");
-        QImage wPImage("../../Assets/wP.svg");
-        color == "white" ? this->pieceImage = wPImage : pieceImage = bPImage;
-
+        QString imagePath = color == "white" ? "../../Assets/wP.svg" : "../../Assets/bP.svg";
+        if(!this->pieceImage.load(imagePath)) {
+            qWarning() << "Error: Failed to load image resource for Pawn:" << color;
+        }
     }
 
     // Pawn can only move vertical, based on color

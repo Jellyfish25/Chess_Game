@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
     // qDebug() << pawnStars->getColor() << Qt::endl;
     // qDebug() << pawnStars->isValid(0, 0, 0, 1) << Qt::endl;
     // qDebug() << pawnStars->getImage().isNull();
-    // delete pawnStars;
+    // qDebug() << pawnStars->getLabel();
+    //delete pawnStars;
 
     QApplication a(argc, argv);
     MainWindow w;

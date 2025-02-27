@@ -3,6 +3,9 @@
 #include <QLabel>
 #include <QStandardItemModel>
 #include "Pawn.cpp"
+#include "Rook.cpp"
+#include "Knight.cpp"
+#include "Bishop.cpp"
 #include <QVector>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -23,10 +26,23 @@ MainWindow::MainWindow(QWidget *parent)
         boardState[6][col] = new Pawn("white");
     }
 
+    //insert rooks
+    boardState[0][0] = new Rook("black");
+    boardState[0][7] = new Rook("black");
+    boardState[7][0] = new Rook("white");
+    boardState[7][7] = new Rook("white");
+
     //todo: Make classes for each piece and insert it into the boardState
     //insert knights
-
+    boardState[0][1] = new Knight("black");
+    boardState[0][6] = new Knight("black");
+    boardState[7][1] = new Knight("white");
+    boardState[7][6] = new Knight("white");
     //insert bishops
+    boardState[0][2] = new Bishop("black");
+    boardState[0][5] = new Bishop("black");
+    boardState[7][2] = new Bishop("white");
+    boardState[7][5] = new Bishop("white");
 
     //insert rooks
 

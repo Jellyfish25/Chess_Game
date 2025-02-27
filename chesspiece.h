@@ -2,12 +2,14 @@
 #define CHESSPIECE_H
 #include <QString>
 #include <QImage>
+#include <QDebug>
 
 class ChessPiece
 {
 
 public:
     ChessPiece(QString color, QString label, QImage pieceImage);
+    virtual ~ChessPiece() {}; //virtual deconstructor
     QString getColor() const;
     QString getLabel() const;
     QImage getImage() const;
