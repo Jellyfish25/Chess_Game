@@ -1,0 +1,17 @@
+build/ 
+*.o
+*.obj
+*.exe
+*.dll
+*.a
+*.lib
+*.so
+*.zip
+*.tar
+*.gz
+*.swp
+
+# Ignore Qt Creator specific files
+*.pro.user
+*.pro.user.*
+*.qmlproject.user
