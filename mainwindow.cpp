@@ -6,6 +6,8 @@
 #include "Rook.cpp"
 #include "Knight.cpp"
 #include "Bishop.cpp"
+#include "King.cpp"
+#include "Queen.cpp"
 #include <QVector>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -44,12 +46,13 @@ MainWindow::MainWindow(QWidget *parent)
     boardState[7][2] = new Bishop("white");
     boardState[7][5] = new Bishop("white");
 
-    //insert rooks
-
     //insert queen
+    boardState[0][3] = new Queen("black");
+    boardState[7][3] = new Queen("white");
 
     //insert king
-
+    boardState[0][4] = new King("black");
+    boardState[7][4] = new King("white");
     initializeBoard(boardState);
     updateSteps();
 }

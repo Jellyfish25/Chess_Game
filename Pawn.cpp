@@ -17,10 +17,10 @@ public:
         if(startX != endX) {
             return false;
         }
-        if(this->getColor() == "white") {
-            return (startY + 1) == endY;
+        if(this->getColor() == "black") {
+            return (startY + 2) == endY || (startY + 1) == endY;
         }
 
-        return (startY - 1) == endY;
+        return (startY - 2) == endY || (startY - 1) == endY;
     }
 };
