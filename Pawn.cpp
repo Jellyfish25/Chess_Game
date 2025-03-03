@@ -14,13 +14,13 @@ public:
 
     // Pawn can only move vertical, based on color
     bool isValid(int startX, int startY, int endX, int endY) const override {
-        if(startX != endX) {
+        if(startY != endY) {
             return false;
         }
         if(this->getColor() == "black") {
-            return (startY + 2) == endY || (startY + 1) == endY;
+            return (startX + 2) == endX || (startX + 1) == endX;
         }
 
-        return (startY - 2) == endY || (startY - 1) == endY;
+        return (startX - 2) == endX || (startX - 1) == endX;
     }
 };

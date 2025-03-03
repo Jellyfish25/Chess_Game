@@ -14,6 +14,10 @@ public:
     QString getLabel() const;
     QImage getImage() const;
     virtual bool isValid(int startX, int startY, int endX, int endY) const = 0;
+    int prevX;
+    int prevY;
+    int currX;
+    int currY;
 
 protected:
     QString color;

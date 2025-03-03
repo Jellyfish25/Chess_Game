@@ -1,4 +1,4 @@
-#import "ChessPiece.h"
+#include "ChessPiece.h"
 
 class Queen : public ChessPiece {
 public:

@@ -11,6 +11,6 @@ public:
 
     //diagonal movement, slope should be 1
     bool isValid(int xStart, int xEnd, int yStart, int yEnd) const override {
-        return abs(xStart - xEnd) == abs(yStart - yEnd);
+        return abs(xStart - yEnd) == abs(yStart - xEnd) || abs(xStart - xEnd) == abs(yStart - yEnd);
     }
 };
