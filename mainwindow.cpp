@@ -14,17 +14,16 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , model(new QStandardItemModel())
     , boardState(8, QVector<ChessPiece*>(8, nullptr))
 {
     ui->setupUi(this);
     ui->gridLayout->setSpacing(0);
     ui->gridLayout->setContentsMargins(0, 0, 0, 0);
-    this->model = new QStandardItemModel();
+    //todo: make GUI scrollable + dynamically scale
 
     //generate pieces and store them in a container
     //each piece will have x,y coordinates correlated to a piece
-    //note: initialize 2d vector boardstate of size 8x8 with null values
-    //QVector<QVector<ChessPiece*>> boardState(8, QVector<ChessPiece*>(8, nullptr));
     //insert pawns
     for(int col = 0; col < 8; col++) {
         boardState[1][col] = new Pawn("black");
@@ -55,21 +54,31 @@ MainWindow::MainWindow(QWidget *parent)
     //insert kings
     boardState[0][4] = new King("black");
     boardState[7][4] = new King("white");
+
+    //initialize board
     updateBoardDisplay(boardState);
 }
 
+//paints the board state on update, can be further optimized
+//note: initialize board (64), then update only two tiles (2) instead of all tiles (64)
 void MainWindow::updateBoardDisplay(QVector<QVector<ChessPiece*>> &boardState) {
+    QLayoutItem *item;
+    while ((item = ui->gridLayout->takeAt(0)) != nullptr) {
+        if (QWidget *widget = item->widget()) {
+            widget->deleteLater();  // Schedules widget for deletion
+        }
+        delete item;
+    }
+
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             QLabel *tile = new QLabel();
-            DraggableLabel *label = new DraggableLabel(this, this, ui->gridLayout);  // Pass 'this' as MainWindow
+            DraggableLabel *label = new DraggableLabel(this, this);  // Pass 'this' as MainWindow
             label->setProperty("posX", i);
             label->setProperty("posY", j);
             label->setFixedSize(40, 40);
             label->setAlignment(Qt::AlignCenter);
-
             label->setAcceptDrops(true);
-            label->setBoardState(&boardState);
 
             if ((i + j) % 2 != 0) {
                 tile->setStyleSheet("background-color: rgb(242, 111, 246);");
@@ -92,23 +101,32 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
     if(endX >= boardState.length() || endY >= boardState[0].length()) {
         return;
     }
-    // 1. Validate the move (based on piece type, current position, and destination)
 
+    //verify the move is valid(based on piece type, current position, and destination)
     ChessPiece *movingPiece = boardState[startX][startY];
     if (movingPiece && movingPiece->isValid(startX, startY, endX, endY)) {
-        //prevent from being able to capture same colored pieces
-        if(boardState[endX][endY] != nullptr) {
-            if(boardState[endX][endY]->getColor() == movingPiece->getColor()) {
-                return;
-            }
+        //prevent pieces from being able to cross existing pieces on that path
+        if(!verifyPath(startX, startY, endX, endY)) {
+            qDebug() << "invalid move: current piece is blocked";
+            return;
         }
-        boardState[endX][endY] = movingPiece;
-        boardState[startX][startY] = nullptr;
-        updateBoardDisplay(boardState);
+
+        //update the boardState and movingPiece (note, with smart pointers, don't have to manually delete).
+        //delete the piece at end point
+        if(boardState[endX][endY] != nullptr) {
+            delete boardState[endX][endY];
+        }
+
+        //set to the current moved piece
         movingPiece->prevX = startX;
         movingPiece->prevY = startY;
         movingPiece->currX = endX;
         movingPiece->currY = endY;
+        boardState[endX][endY] = movingPiece;
+        boardState[startX][startY] = nullptr;
+
+        //update the display
+        updateBoardDisplay(boardState);
 
         //when moving the piece, need to verify that boardState[endX][endY] is empty, contains an opposing color,
         //and is not blocked by the same color in the path
@@ -116,13 +134,23 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
          * 1. pawn: if moving two tiles, gives the opponent the opportunity for en passant
          *      - opposite piece needs to be next to current piece (check left/right of pawns)
          *      - reaching the opposite side of the board converts to queen
-         * 2. knight: can go over pieces, ignoring having to check if the path is blocked
          * 3. king: on capture, game is over
+         * 4. Castle:
+         *      1. verify king & castle has not moved (bool hasMoved in King & Rook class)
+         *      2. no pieces are between (verifyPath, create condition for when end point is rook
+         *      3. and king and rook is not in check (examine state of the board, seeing if any opposing piece can check)
+         * 5. if king is in check, can only move king (player controller state: bool isCheck)
+         *
+         * IMPLEMENTED:
+         * 2. knight: can go over pieces, ignoring having to check if the path is blocked
          * for all pieces: on next move, check if there is an obstacle between (startX, startY) -> (endX, endY)
         */
+
         if(movingPiece->getLabel() == "Pawn" && abs(movingPiece->prevX - endX) == 2) {
             qDebug() << "En passant opportunity";
         }
+
+        //display the current move taken
         char charVal = endY + 'a';
         char numVal = endX + '0';
         QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
@@ -131,12 +159,59 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
     }
 }
 
+// update what was currently played in the "Played Moves" window
 void MainWindow::updateMovesDisplay(QString pieceID, QString coords) {
     // testing function to display current steps
     QStandardItem *currentMove = new QStandardItem(pieceID + " " + coords);
     currentMove->setFlags(currentMove->flags() & ~Qt::ItemIsEditable);
     model->appendRow(currentMove);
     ui->listView->setModel(model);
+}
+
+// verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
+bool MainWindow::verifyPath(int startX, int startY, int endX, int endY) {
+    //check for every piece besides knight
+    if(boardState[startX][startY]->getLabel() != "Knight") {
+        int dX = abs(endX - startX);
+        int dY = abs(endY - startY);
+        //sign to increment currX, currY by
+        int signX = (endX > startX) - (endX < startX);
+        int signY = (endY > startY) - (endY < startY);
+        int currX = startX;
+        int currY = startY;
+        int error = dX - dY; //margin of error for each shift
+
+        while(currX != endX || currY != endY) {
+            int currErr = 2*error;
+            //if currErr > -dY, decrease error and move currX
+            if(currErr > -dY) {
+                error -= dY;
+                currX += signX;
+            }
+            //if currErr < dX, increase error and move currY
+            if(currErr < dX) {
+                error += dX;
+                currY += signY;
+            }
+
+            //no further verifications once curr coordinates reach end coordinates
+            if(currX == endX && currY == endY) {
+                break;
+            }
+            if(currX < 0 || currX >= boardState.length() || currY < 0 || currY >= boardState[0].length()) {
+                return false;
+            }
+            if(boardState[currX][currY] != nullptr) {
+                return false;
+            }
+        }
+    }
+
+    //at the destination, if there is a piece then verify alternating colors
+    if(boardState[endX][endY] != nullptr && boardState[endX][endY]->getColor() == boardState[startX][startY]->getColor()) {
+        return false;
+    }
+    return true;
 }
 
 MainWindow::~MainWindow()

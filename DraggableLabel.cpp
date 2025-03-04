@@ -6,13 +6,9 @@
 #include <QWidget>
 #include "mainwindow.h"
 
-DraggableLabel::DraggableLabel(MainWindow *mainWindow, QWidget *parent, QGridLayout *layout)
-    : QLabel(parent), mainWindow(mainWindow), gridLayout(layout), boardState(nullptr) {
+DraggableLabel::DraggableLabel(MainWindow *mainWindow, QWidget *parent)
+    : QLabel(parent), mainWindow(mainWindow) {
     setAcceptDrops(true); // Allow drag and drop
-}
-
-void DraggableLabel::setBoardState(QVector<QVector<ChessPiece*>> *boardState) {
-    this->boardState = boardState;
 }
 
 void DraggableLabel::mousePressEvent(QMouseEvent *event) {
@@ -24,7 +20,7 @@ void DraggableLabel::mousePressEvent(QMouseEvent *event) {
         mimeData->setText(QString::number(this->property("posX").toInt()) + "," +
                           QString::number(this->property("posY").toInt()));
         drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap());  // Use the current pixmap as the drag image
+        drag->setPixmap(pixmap());
 
         QPoint hotspot = event->pos();
         drag->setHotSpot(hotspot);
@@ -42,8 +38,6 @@ void DraggableLabel::dragEnterEvent(QDragEnterEvent *event) {
 
 void DraggableLabel::dropEvent(QDropEvent *event) {
     qDebug() << "drop";
-    if (!boardState) return;  // Ensure board state is set
-
     QString data = event->mimeData()->text();
     QStringList parts = data.split(",");
     if (parts.size() != 2) return;  // Incorrect data format
@@ -66,7 +60,3 @@ void DraggableLabel::dropEvent(QDropEvent *event) {
     mainWindow->handleMove(startX, startY, endX, endY);
     event->acceptProposedAction();
 }
-
-
-
-//qDebug() << "Drop position: (" << dropPos.x() << "," << dropPos.y() << ")";

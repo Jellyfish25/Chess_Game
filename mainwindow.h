@@ -12,8 +12,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow{
     Q_OBJECT
 
 public:
@@ -29,6 +28,6 @@ private:
     Ui::MainWindow *ui;
     QStandardItemModel *model;
     void updateBoardDisplay(QVector<QVector<ChessPiece*>> &boardState);
-    //unordered_map<QString, QString> pieceNameMap;
+    bool verifyPath(int xStart, int yStart, int xEnd, int yEnd);
 };
 #endif // MAINWINDOW_H
