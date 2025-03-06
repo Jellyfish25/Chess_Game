@@ -102,6 +102,7 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
         return;
     }
 
+    bool isValidMove = false;
     //verify the move is valid(based on piece type, current position, and destination)
     ChessPiece *movingPiece = boardState[startX][startY];
     if (movingPiece && movingPiece->isValid(startX, startY, endX, endY)) {
@@ -116,25 +117,11 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
         if(boardState[endX][endY] != nullptr) {
             delete boardState[endX][endY];
         }
-
-        //set to the current moved piece
-        movingPiece->prevX = startX;
-        movingPiece->prevY = startY;
-        movingPiece->currX = endX;
-        movingPiece->currY = endY;
-
-        boardState[endX][endY] = movingPiece;
-        boardState[startX][startY] = nullptr;
-
-        //update the display
-        updateBoardDisplay(boardState);
+        isValidMove = true;
 
         //when moving the piece, need to verify that boardState[endX][endY] is empty, contains an opposing color,
         //and is not blocked by the same color in the path
         /*special cases:
-         * 1. pawn: if moving two tiles, gives the opponent the opportunity for en passant
-         *      - opposite piece needs to be next to current piece (check left/right of pawns)
-         *      - reaching the opposite side of the board converts to queen
          * 3. king: on capture, game is over
          * 4. Castle:
          *      1. verify king & castle has not moved (bool hasMoved in King & Rook class)
@@ -143,20 +130,10 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
          * 5. if king is in check, can only move king (player controller state: bool isCheck)
          *
          * IMPLEMENTED:
+         * 1. pawn: en passant & queen
          * 2. knight: can go over pieces, ignoring having to check if the path is blocked
          * for all pieces: on next move, check if there is an obstacle between (startX, startY) -> (endX, endY)
         */
-
-        if(movingPiece->getLabel() == "Pawn" && abs(movingPiece->prevX - endX) == 2) {
-            qDebug() << "En passant opportunity";
-        }
-
-        //display the current move taken
-        char charVal = endY + 'a';
-        char numVal = endX + '0';
-        QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
-        QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
-        updateMovesDisplay(pieceID, coords);
     }
     else if(movingPiece && movingPiece->getLabel() == "Pawn" && model->rowCount() > 0) {
         QString previousMove = model->item(model->rowCount() - 1)->text();
@@ -164,51 +141,53 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
         QString previousColor = moveList[0];
         QString previousPiece = moveList[1];
         int col = moveList[2][1].unicode() - 'a';
-        int row = moveList[2][2].unicode() - '0';
+        int row = abs(moveList[2][2].unicode() - '1' - 7);
 
-        /*
-         * check if en passant is possible
-         * conditions:
-         *  1. there is an opposing pawn next to the current piece
-         *  2. the move is diagonal, going behind opposing pawn
-         *  3. can only be done if the previous move was the opposing pawn
-        */
         //check that the previous piece is a different color and is a pawn
         if(previousColor != movingPiece->getColor() && previousPiece == "Pawn") {
-
-            bool isValidMove = false;
             ChessPiece *previousPawn = boardState[row][col];
             //check if the previous piece exists and it has moved 2 tiles (opening up for enpassant)
             if(previousPawn && !boardState[endX][endY] && abs(previousPawn->currX - previousPawn->prevX) == 2) {
+                //check if the move point is valid
                 if(previousPawn->currX == startX && previousPawn->currY == endY) {
                     if((movingPiece->getColor() == "white" && startX == endX + 1) ||
                         (movingPiece->getColor() == "black" && startX == endX - 1)) {
+                        //capture pawn
+                        delete boardState[row][col];
+                        boardState[row][col] = nullptr;
                         isValidMove = true;
                     }
                 }
             }
-
-            //update the position and capture the previous pawn
-            if(isValidMove) {
-                delete boardState[row][col];
-                boardState[row][col] = nullptr;
-                movingPiece->prevX = startX;
-                movingPiece->prevY = startY;
-                movingPiece->currX = endX;
-                movingPiece->currY = endY;
-
-                boardState[endX][endY] = movingPiece;
-                boardState[startX][startY] = nullptr;
-
-                //display the current move taken
-                char charVal = endY + 'a';
-                char numVal = endX + '0';
-                QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
-                QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
-                updateBoardDisplay(boardState);
-                updateMovesDisplay(pieceID, coords);
-            }
         }
+    }
+
+    if(isValidMove) {
+        //update the current piece's location
+        movingPiece->prevX = startX;
+        movingPiece->prevY = startY;
+        movingPiece->currX = endX;
+        movingPiece->currY = endY;
+
+        //pawn becomes queen if it reaches the end of the board
+        if(movingPiece->getLabel() == "Pawn" && endX == boardState.size() - 1 || endX == 0) {
+            QString color = movingPiece->getColor();
+            delete movingPiece;
+            boardState[endX][endY] = nullptr;
+            movingPiece = new Queen(color);
+        }
+        boardState[endX][endY] = movingPiece;
+        boardState[startX][startY] = nullptr;
+
+        //display the current move taken
+        char charVal = endY + 'a';
+        char numVal = abs(endX - 7) + '1';
+        QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
+        QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
+
+        //update board & move display
+        updateBoardDisplay(boardState);
+        updateMovesDisplay(pieceID, coords);
     }
 }
 
