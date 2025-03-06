@@ -40,7 +40,9 @@ void DraggableLabel::dropEvent(QDropEvent *event) {
     qDebug() << "drop";
     QString data = event->mimeData()->text();
     QStringList parts = data.split(",");
-    if (parts.size() != 2) return;  // Incorrect data format
+    if(parts.size() != 2) {
+        return;  // Incorrect data format
+    }
 
     int startX = parts[0].toInt();
     int startY = parts[1].toInt();

@@ -122,6 +122,7 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
         movingPiece->prevY = startY;
         movingPiece->currX = endX;
         movingPiece->currY = endY;
+
         boardState[endX][endY] = movingPiece;
         boardState[startX][startY] = nullptr;
 
@@ -157,6 +158,58 @@ void MainWindow::handleMove(int startX, int startY, int endX, int endY) {
         QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
         updateMovesDisplay(pieceID, coords);
     }
+    else if(movingPiece && movingPiece->getLabel() == "Pawn" && model->rowCount() > 0) {
+        QString previousMove = model->item(model->rowCount() - 1)->text();
+        QStringList moveList = previousMove.split(" ");
+        QString previousColor = moveList[0];
+        QString previousPiece = moveList[1];
+        int col = moveList[2][1].unicode() - 'a';
+        int row = moveList[2][2].unicode() - '0';
+
+        /*
+         * check if en passant is possible
+         * conditions:
+         *  1. there is an opposing pawn next to the current piece
+         *  2. the move is diagonal, going behind opposing pawn
+         *  3. can only be done if the previous move was the opposing pawn
+        */
+        //check that the previous piece is a different color and is a pawn
+        if(previousColor != movingPiece->getColor() && previousPiece == "Pawn") {
+
+            bool isValidMove = false;
+            ChessPiece *previousPawn = boardState[row][col];
+            //check if the previous piece exists and it has moved 2 tiles (opening up for enpassant)
+            if(previousPawn && !boardState[endX][endY] && abs(previousPawn->currX - previousPawn->prevX) == 2) {
+                if(previousPawn->currX == startX && previousPawn->currY == endY) {
+                    if((movingPiece->getColor() == "white" && startX == endX + 1) ||
+                        (movingPiece->getColor() == "black" && startX == endX - 1)) {
+                        isValidMove = true;
+                    }
+                }
+            }
+
+            //update the position and capture the previous pawn
+            if(isValidMove) {
+                delete boardState[row][col];
+                boardState[row][col] = nullptr;
+                movingPiece->prevX = startX;
+                movingPiece->prevY = startY;
+                movingPiece->currX = endX;
+                movingPiece->currY = endY;
+
+                boardState[endX][endY] = movingPiece;
+                boardState[startX][startY] = nullptr;
+
+                //display the current move taken
+                char charVal = endY + 'a';
+                char numVal = endX + '0';
+                QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
+                QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
+                updateBoardDisplay(boardState);
+                updateMovesDisplay(pieceID, coords);
+            }
+        }
+    }
 }
 
 // update what was currently played in the "Played Moves" window
@@ -170,6 +223,7 @@ void MainWindow::updateMovesDisplay(QString pieceID, QString coords) {
 
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
 bool MainWindow::verifyPath(int startX, int startY, int endX, int endY) {
+
     //check for every piece besides knight
     if(boardState[startX][startY]->getLabel() != "Knight") {
         int dX = abs(endX - startX);
