@@ -2,7 +2,7 @@
 
 class Queen : public ChessPiece {
 public:
-    Queen(QString color) : ChessPiece(color, "Queen", QImage()) {
+    Queen(QString color, int x, int y) : ChessPiece(color, "Queen", QImage(), x, y) {
         QString imagePath = color == "white" ? "../../Assets/wQ.svg" : "../../Assets/bQ.svg";
         if (!this->pieceImage.load(imagePath)) {
             qWarning() << "Error: Failed to load image resource for Rook:" << color;

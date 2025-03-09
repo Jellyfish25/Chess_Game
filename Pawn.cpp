@@ -3,7 +3,7 @@
 class Pawn : public ChessPiece {
 public:
     //override the pieceImage to a pawn image
-    Pawn(QString color) : ChessPiece(color, "Pawn", QImage()) {
+    Pawn(QString color, int x, int y) : ChessPiece(color, "Pawn", QImage(), x, y) {
         //QString imagePath = QCoreApplication::applicationDirPath() + "/../../Assets/bP.svg";
         //qDebug() << imagePath;
         QString imagePath = color == "white" ? "../../Assets/wP.svg" : "../../Assets/bP.svg";

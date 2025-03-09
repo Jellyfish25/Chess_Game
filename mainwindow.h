@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QStandardItemModel>
 #include "ChessPiece.h"
+#include "King.cpp"
 using std::unordered_map;
 
 QT_BEGIN_NAMESPACE
@@ -22,12 +23,19 @@ public:
     void updateMovesDisplay(QString pieceID, QString coords);
 
 protected:
-    QVector<QVector<ChessPiece*>> boardState;
+    //QVector<QVector<ChessPiece*>> boardState;
+    QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;
+    //boardState(boardState(8, QVector<std::shared_ptr<ChessPiece>>(8, nullptr))
 
 private:
     Ui::MainWindow *ui;
     QStandardItemModel *model;
-    void updateBoardDisplay(QVector<QVector<ChessPiece*>> &boardState);
-    bool verifyPath(int xStart, int yStart, int xEnd, int yEnd);
+    std::shared_ptr<King> whiteKing;
+    std::shared_ptr<King> blackKing;
+    //King *blackKing;
+    //King *whiteKing;
+    void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
+    bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
+    bool isChecked(ChessPiece *movingPiece, int futureX, int futureY);
 };
 #endif // MAINWINDOW_H
