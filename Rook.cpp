@@ -10,7 +10,7 @@ public:
     }
 
     //Rook can only move horizontal and vertical
-    bool isValid(int startX, int startY, int endX, int endY) const override {
+    bool isValidMove(int startX, int startY, int endX, int endY) const override {
         return (startX == endX) || (startY == endY);
     }
 };

@@ -10,7 +10,7 @@ public:
     }
 
     //L shaped movement
-    bool isValid(int xStart, int yStart, int xEnd, int yEnd) const override {
+    bool isValidMove(int xStart, int yStart, int xEnd, int yEnd) const override {
         int dx = abs(xStart - xEnd);
         int dy = abs(yStart - yEnd);
         return (dx == 2 && dy == 1) || (dx == 1 && dy == 2);

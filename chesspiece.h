@@ -9,7 +9,7 @@ class ChessPiece {
 public:
     ChessPiece(QString color, QString label, QImage pieceImage, int x, int y);
     virtual ~ChessPiece() {}; //virtual deconstructor
-    virtual bool isValid(int startX, int startY, int endX, int endY) const = 0;
+    virtual bool isValidMove(int startX, int startY, int endX, int endY) const = 0;
 
     QString getColor() const;
     QString getLabel() const;

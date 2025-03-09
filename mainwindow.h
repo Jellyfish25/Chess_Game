@@ -5,8 +5,7 @@
 #include <QStandardItemModel>
 #include "ChessPiece.h"
 #include "King.cpp"
-using std::unordered_map;
-
+using std::shared_ptr;
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -36,6 +35,6 @@ private:
     //King *whiteKing;
     void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
-    bool isChecked(ChessPiece *movingPiece, int futureX, int futureY);
+    bool isSafeMove(std::shared_ptr<ChessPiece> movingPiece, int endX, int endY);
 };
 #endif // MAINWINDOW_H

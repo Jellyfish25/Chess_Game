@@ -10,7 +10,7 @@ public:
     }
 
     // can traverse diagonal + horizontal
-    bool isValid(int xStart, int yStart, int xEnd, int yEnd) const override {
+    bool isValidMove(int xStart, int yStart, int xEnd, int yEnd) const override {
         int dX = abs(xStart - xEnd);
         int dY = abs(yStart - yEnd);
         return (dX == dY) || xStart == xEnd || yStart == yEnd;
