@@ -1,13 +1,7 @@
 #include "DraggableLabel.h"
-#include <QDrag>
-#include <QMimeData>
-#include <QDropEvent>
-#include <QMouseEvent>
-#include <QWidget>
-#include "mainwindow.h"
 
-DraggableLabel::DraggableLabel(MainWindow *mainWindow, QWidget *parent)
-    : QLabel(parent), mainWindow(mainWindow) {
+DraggableLabel::DraggableLabel(shared_ptr<ChessBoard> chessBoard, QWidget *parent)
+    : chessBoard(chessBoard),QLabel(parent) {
     setAcceptDrops(true); // Allow drag and drop
 }
 
@@ -37,6 +31,7 @@ void DraggableLabel::dragEnterEvent(QDragEnterEvent *event) {
 }
 
 void DraggableLabel::dropEvent(QDropEvent *event) {
+
     qDebug() << "drop";
     QString data = event->mimeData()->text();
     QStringList parts = data.split(",");
@@ -59,6 +54,7 @@ void DraggableLabel::dropEvent(QDropEvent *event) {
     qDebug() << "end position: (" << endX << "," << endY << ")";
 
     // Now call the handleMove function
-    mainWindow->handleMove(startX, startY, endX, endY);
+    //mainWindow->handleMove(startX, startY, endX, endY);
+    chessBoard->handleMove(startX, startY, endX, endY);
     event->acceptProposedAction();
 }

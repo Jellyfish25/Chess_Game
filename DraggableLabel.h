@@ -6,14 +6,14 @@
 #include <QMimeData>
 #include <QDropEvent>
 #include <QGridLayout>
-#include "mainwindow.h"
+#include "chessboard.h"
 
 //extend Qlabel to make it a draggable component
 class DraggableLabel : public QLabel {
     Q_OBJECT
 
 public:
-    explicit DraggableLabel(MainWindow *mainWindow, QWidget *parent = nullptr);
+    explicit DraggableLabel(std::shared_ptr<ChessBoard>, QWidget *parent = nullptr);
     void setPieceImage(const QPixmap& image);
 
 protected:
@@ -22,6 +22,6 @@ protected:
     void dropEvent(QDropEvent *event) override;
 
 private:
-    MainWindow *mainWindow;  // Pointer to MainWindow
+    std::shared_ptr<ChessBoard> chessBoard;
 };
 #endif // DRAGGABLELABEL_H

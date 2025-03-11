@@ -34,6 +34,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         Queen.cpp
         DraggableLabel.h
         DraggableLabel.cpp
+        chessboard.h chessboard.cpp
+
 
     )
 # Define target properties for Android with Qt 6 as:

@@ -4,8 +4,12 @@
 #include <QMainWindow>
 #include <QStandardItemModel>
 #include "ChessPiece.h"
-#include "King.cpp"
+#include "ChessBoard.h"
+
 using std::shared_ptr;
+using std::unique_ptr;
+using std::make_shared;
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -18,23 +22,17 @@ class MainWindow : public QMainWindow{
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void handleMove(int startX, int startY, int endX, int endY);
+
+public slots:
+    void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     void updateMovesDisplay(QString pieceID, QString coords);
 
 protected:
-    //QVector<QVector<ChessPiece*>> boardState;
     QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;
-    //boardState(boardState(8, QVector<std::shared_ptr<ChessPiece>>(8, nullptr))
 
 private:
     Ui::MainWindow *ui;
     QStandardItemModel *model;
-    std::shared_ptr<King> whiteKing;
-    std::shared_ptr<King> blackKing;
-    //King *blackKing;
-    //King *whiteKing;
-    void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
-    bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
-    bool isSafeMove(std::shared_ptr<ChessPiece> movingPiece, int endX, int endY);
+    std::shared_ptr<ChessBoard> chessBoard;
 };
 #endif // MAINWINDOW_H

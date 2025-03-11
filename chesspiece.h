@@ -1,5 +1,6 @@
 #ifndef CHESSPIECE_H
 #define CHESSPIECE_H
+
 #include <QString>
 #include <QImage>
 #include <QDebug>
