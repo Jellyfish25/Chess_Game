@@ -40,7 +40,7 @@ private:
     //void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
     bool isSafeMove(std::shared_ptr<ChessPiece> movingPiece, int endX, int endY);
-    bool isCheckMate();
+    bool isCheckMate(QString color);
 
     shared_ptr<ChessPiece> previouslyMoved;
 };
