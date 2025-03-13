@@ -37,11 +37,14 @@ private:
     QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;
     std::shared_ptr<King> whiteKing;
     std::shared_ptr<King> blackKing;
-    //void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
+    shared_ptr<ChessPiece> previouslyMoved;
+
     bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
     bool isSafeMove(std::shared_ptr<ChessPiece> movingPiece, int endX, int endY);
     bool isCheckMate(QString color);
+    bool isStaleMate(QString color);
+    bool isPieceInCheck(std::shared_ptr<ChessPiece> piece);
 
-    shared_ptr<ChessPiece> previouslyMoved;
+    int possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList);
 };
 #endif // CHESSBOARD_H

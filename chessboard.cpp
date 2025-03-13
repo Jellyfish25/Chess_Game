@@ -84,14 +84,12 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 
     if(movingPiece->isValidMove(startX, startY, endX, endY)) { //main movement logic
         //prevent pieces from being able to cross existing pieces on that path
+        //note: valid path also takes into account 2 tile pawn movement
         if(!isValidPath(startX, startY, endX, endY)) {
             qDebug() << "invalid move: current piece is blocked";
             return;
         }
-        else if(movingPiece->getLabel() == "Pawn" && abs(endX - startX) == 2 && boardState[endX][endY]) {
-            qDebug() << "invalid move: pawn cannot capture on two tile movement";
-            return;
-        }
+
         isValidMove = true;
     }
     else if(movingPiece->getLabel() == "Pawn") { //en passant scenario (adjacent movement)
@@ -177,6 +175,16 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
 bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
 
+    //pawn can move two tiles forward on first move & if end tile is not blocked
+    if (boardState[startX][startY]->getLabel() == "Pawn"
+        && abs(endX - startX) == 2) { // Two-tile move
+        if(boardState[endX][endY]) {
+            qDebug() << "invalid move: pawn is blocked from moving two tiles";
+            return false;
+        }
+        return true;
+    }
+
     //check for every piece besides knight
     if(boardState[startX][startY]->getLabel() != "Knight") {
         int dX = abs(endX - startX);
@@ -222,7 +230,6 @@ bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
 }
 
 // verify that the move will not result in a check (looking forward to the proposed move)
-// note: Move Legality Check
 bool ChessBoard::isSafeMove(shared_ptr<ChessPiece> movingPiece, int endX, int endY) {
     if (!whiteKing || !blackKing) {  // Ensure whiteKing is not null
         qDebug() << "White king is captured!";
@@ -260,9 +267,9 @@ bool ChessBoard::isSafeMove(shared_ptr<ChessPiece> movingPiece, int endX, int en
                 boardState[i][j]->getColor() == oppColor &&
                 boardState[i][j]->isValidMove(i, j, kingCoords[0], kingCoords[1]) &&
                 isValidPath(i, j, kingCoords[0], kingCoords[1])) {
-                //qDebug() << "checked by:" << boardState[i][j]->getColor()
-                //<< boardState[i][j]->getLabel()
-                //<<"coords: " << i << j;
+                qDebug() << "checked by:" << boardState[i][j]->getColor()
+                << boardState[i][j]->getLabel()
+                <<"coords: " << i << j;
                 isSafe = false;
             }
             if(!isSafe) {
@@ -277,23 +284,38 @@ bool ChessBoard::isSafeMove(shared_ptr<ChessPiece> movingPiece, int endX, int en
     return isSafe;
 }
 
-// Verifies that the current color (player) has a move to get out of check
-// note: Checkmate Verification
-bool ChessBoard::isCheckMate(QString color) {
-    shared_ptr<King> kingPiece = (color == "white") ? whiteKing : blackKing;
+//verifies that the current piece is not in check
+bool ChessBoard::isPieceInCheck(shared_ptr<ChessPiece> piece) {
+    if(!piece) {
+        return true;
+    }
 
-    //get all opponent pieces that can currently attack the king
-    QVector<shared_ptr<ChessPiece>> playerPieces;
+    std::array<int, 2> pieceCoords = piece->getCurrPos();
+    QString oppColor = piece->getColor() == "white" ? "black" : "white";
+
+    //verify that the current piece can be captured
     for(int i = 0; i < boardState.size(); i++) {
         for(int j = 0; j < boardState[0].size(); j++) {
-            if(boardState[i][j] && boardState[i][j]->getColor() == color) {
-                playerPieces.append(boardState[i][j]);
+            if(boardState[i][j] &&
+                boardState[i][j]->getColor() == oppColor &&
+                boardState[i][j]->isValidMove(i, j, pieceCoords[0], pieceCoords[1]) &&
+                isValidPath(i, j, pieceCoords[0], pieceCoords[1]) &&
+                //verify that moving the current selected piece will not result in a check
+                isSafeMove(boardState[i][j], pieceCoords[0], pieceCoords[1])) {
+                return true;
             }
         }
     }
 
+    return false;
+}
+
+//returns the count of total possible moves that can be played
+int ChessBoard::possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList) {
+
+    int validMoveCount = 0;
     //try all possible moves for each piece, verifying if the king is not in check after
-    for(auto &piece : playerPieces) {
+    for(auto &piece : pieceList) {
         std::array<int, 2> coords = piece->getCurrPos();
         int startX = coords[0];
         int startY = coords[1];
@@ -301,14 +323,73 @@ bool ChessBoard::isCheckMate(QString color) {
         for(int endX = 0; endX < boardState.size(); endX++) {
             for(int endY = 0; endY < boardState[0].size(); endY++) {
                 if(piece->isValidMove(startX, startY, endX, endY)
-                    && isValidPath(startX, startY, endX, endY)) {
-                    if(isSafeMove(piece, endX, endY)) {
+                    && isValidPath(startX, startY, endX, endY)
+                    && isSafeMove(piece, endX, endY)) {
                         qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << endX << endY;
-                        return false;
-                    }
+                        validMoveCount++;
                 }
             }
         }
     }
+
+    return validMoveCount;
+}
+
+// Verifies that the current color (player) has a move to get out of check
+// note: Checkmate Verification
+bool ChessBoard::isCheckMate(QString color) {
+    shared_ptr<King> kingPiece = (color == "white") ? whiteKing : blackKing;
+
+    //verify that the king is in check
+    if(!isPieceInCheck(kingPiece)) {
+        return false;
+    }
+
+    //get all pieces that can currently attack the king
+    QVector<shared_ptr<ChessPiece>> pieceList;
+    for(int i = 0; i < boardState.size(); i++) {
+        for(int j = 0; j < boardState[0].size(); j++) {
+            if(boardState[i][j] && boardState[i][j]->getColor() == color) {
+                pieceList.append(boardState[i][j]);
+            }
+        }
+    }
+
+    //verify that there are no possible valid moves to be made (including king movement)
+    int validMoves = possibleMoves(pieceList);
+    qDebug() << "available moves: " << validMoves;
+
+    if(validMoves > 0) {
+        return false;
+    }
+    return true;
+}
+
+//verifies if there is a stale mate (draw)
+//conditions: king is not in check but has no legal moves left
+bool ChessBoard::isStaleMate(QString color) {
+    shared_ptr<ChessPiece> kingPiece = color == "white" ? whiteKing : blackKing;
+
+    //king should not be in check
+    if(isPieceInCheck(kingPiece)) {
+        return false;
+    }
+
+    //get all playable pieces
+    QVector<shared_ptr<ChessPiece>> playerPieces;
+    for(int i = 0; i < boardState.size(); i++) {
+        for(int j = 0; j < boardState[0].size(); j++) {
+            if(boardState[i][j] && boardState[i][j]->getColor() == color && boardState[i][j]->getLabel() != "King") {
+                playerPieces.append(boardState[i][j]);
+            }
+        }
+    }
+
+    //verify that the player has no valid moves left (excluding king)
+    int validMoves = possibleMoves(playerPieces);
+    if(validMoves > 0) {
+        return false;
+    }
+
     return true;
 }

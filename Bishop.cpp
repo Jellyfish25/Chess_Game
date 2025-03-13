@@ -10,7 +10,10 @@ public:
     }
 
     //diagonal movement, slope should be 1
+    //fix this logic
     bool isValidMove(int xStart, int xEnd, int yStart, int yEnd) const override {
+        bool val = abs(xStart - yEnd) == abs(yStart - xEnd) || abs(xStart - xEnd) == abs(yStart - yEnd);
+        qDebug() << "is valid bishop move: " << val;
         return abs(xStart - yEnd) == abs(yStart - xEnd) || abs(xStart - xEnd) == abs(yStart - yEnd);
     }
 };
