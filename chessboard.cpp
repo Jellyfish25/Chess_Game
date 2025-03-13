@@ -10,17 +10,11 @@
  *          - check previous coordinates, should be -1,-1
  *      * No pieces exist between the path
  *          - isValidPath
- *  2. create a gameOver function (note: also check for stalemate for tie)
- *      * called when there is no possible way for the King to get out of a checkmate
- *      * simulate all possible moves
- *          * 1. verify if the king can move to a safe tile
- *          * 2. find all attacker pieces (isValidMove = true going to)
- *          * 3. for each attacker, verify if a defending piece can block it
- *  3.verify gameplay correctness + edge cases
+ *  2.verify gameplay correctness + edge cases
  *      * create test cases
  *      * note: can begin prior to step 1
- *  4.Implement peer-to-peer connectivity, locking boardstate based on current turn
- *  5. stale mate:
+ *  3.Implement peer-to-peer connectivity, locking boardstate based on current turn
+ *  4. stale mate:
  *      * king is not in check, but can only move king
  *      * verify that no pieces can be moved (without placing king in check)
  */
@@ -84,15 +78,18 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 
     if(movingPiece->isValidMove(startX, startY, endX, endY)) { //main movement logic
         //prevent pieces from being able to cross existing pieces on that path
-        //note: valid path also takes into account 2 tile pawn movement
+        //note: valid path also takes into account pawn edge cases
         if(!isValidPath(startX, startY, endX, endY)) {
             qDebug() << "invalid move: current piece is blocked";
             return;
         }
-
         isValidMove = true;
     }
-    else if(movingPiece->getLabel() == "Pawn") { //en passant scenario (adjacent movement)
+    else if(movingPiece->getLabel() == "Pawn") {
+        //diagonal pawn capture
+        isValidMove = isValidPath(startX, startY, endX, endY);
+
+        //en passant scenario (adjacent movement)
         //check that the previous piece is a different color and is a pawn
         if(previouslyMoved && previouslyMoved->getColor() != movingPiece->getColor() && previouslyMoved->getLabel() == "Pawn") {
             std::array<int, 2> prevCoords = previouslyMoved->getPrevPos();
@@ -163,10 +160,11 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
         }
 
         //todo: check for stale mate (no legal moves left, but king not in check)
+        if(isStaleMate(movingPiece->getColor() == "white" ? "black" : "white")) {
+            qDebug() <<  "stale mate";
+        }
 
         //update board & move display
-        //updateBoardDisplay(boardState);
-        //updateMovesDisplay(pieceID, coords);
         emit boardUpdated(boardState);
         emit moveUpdated(pieceID, coords);
     }
@@ -175,14 +173,29 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
 bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
 
-    //pawn can move two tiles forward on first move & if end tile is not blocked
-    if (boardState[startX][startY]->getLabel() == "Pawn"
-        && abs(endX - startX) == 2) { // Two-tile move
-        if(boardState[endX][endY]) {
-            qDebug() << "invalid move: pawn is blocked from moving two tiles";
-            return false;
+    //pawn pathing
+    if (boardState[startX][startY]->getLabel() == "Pawn") {
+        // can move two tiles forward if path isnt blocked
+        if(abs(endX - startX) == 2 && boardState[startX][startY]->getPrevPos()[0] == -1) {
+            int midX = (startX + endX) / 2;
+            if (!boardState[midX][startY] && !boardState[endX][endY]) {
+                qDebug() << "invalid 2 tile move: pawn is blocked by a piece";
+                return true;
+            }
         }
-        return true;
+        // moving one tile forward if path isnt blocked
+        if (abs(startX - endX) == 1 && startY == endY && !boardState[endX][endY]) {
+            return true;
+        }
+
+        // move diagonally if there is an enemy piece to capture
+        if(boardState[startX][startY]->getLabel() == "Pawn"
+            && (abs(startX - endX) == 1 && (endY == startY + 1 || endY == startY - 1))
+            && boardState[endX][endY]
+            && boardState[startX][startY]->getColor() != boardState[endX][endY]->getColor()) {
+            return true;
+        }
+        return false;
     }
 
     //check for every piece besides knight
@@ -267,9 +280,9 @@ bool ChessBoard::isSafeMove(shared_ptr<ChessPiece> movingPiece, int endX, int en
                 boardState[i][j]->getColor() == oppColor &&
                 boardState[i][j]->isValidMove(i, j, kingCoords[0], kingCoords[1]) &&
                 isValidPath(i, j, kingCoords[0], kingCoords[1])) {
-                qDebug() << "checked by:" << boardState[i][j]->getColor()
-                << boardState[i][j]->getLabel()
-                <<"coords: " << i << j;
+                // qDebug() << "checked by:" << boardState[i][j]->getColor()
+                // << boardState[i][j]->getLabel()
+                // <<"coords: " << i << j;
                 isSafe = false;
             }
             if(!isSafe) {
