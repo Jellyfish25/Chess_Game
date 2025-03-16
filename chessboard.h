@@ -35,8 +35,8 @@ public slots:
 
 private:
     QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;
-    std::shared_ptr<King> whiteKing;
-    std::shared_ptr<King> blackKing;
+    std::shared_ptr<ChessPiece> whiteKing;
+    std::shared_ptr<ChessPiece> blackKing;
     shared_ptr<ChessPiece> previouslyMoved;
 
     bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
@@ -46,5 +46,6 @@ private:
     bool isPieceInCheck(std::shared_ptr<ChessPiece> piece);
 
     int possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList);
+    void updateDisplay(std::shared_ptr<ChessPiece> movingPiece);
 };
 #endif // CHESSBOARD_H

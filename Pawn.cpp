@@ -12,11 +12,15 @@ public:
         }
     }
 
-    // Pawn can only move vertical, based on color
+    // Pawn can only move vertical & diagonal based on color
     // note: can only move two tiles forward on it's first move
     bool isValidMove(int startX, int startY, int endX, int endY) const override {
+        // can move diagonally one tile (on capture)
         if(startY != endY) {
-            return false;
+            if(this->getColor() == "black" && abs(startY - endY) == 1 && endX == startX + 1) {
+                return true;
+            }
+            return abs(startY - endY) == 1 && endX == startX - 1;
         }
 
         //can move one or two tiles on first move

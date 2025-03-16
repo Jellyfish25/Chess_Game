@@ -65,37 +65,60 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
         return;
     }
 
-    bool isValidMove = false;
-    bool capturePawn = false;
-
-    //verify the move is valid(based on piece type, current position, and destination)
-    shared_ptr<ChessPiece> movingPiece = boardState[startX][startY];
-    qDebug() << movingPiece->getColor();
     //check if the current movingPiece is not null
+    shared_ptr<ChessPiece> movingPiece = boardState[startX][startY];
     if(!movingPiece) {
         return;
     }
 
-    if(movingPiece->isValidMove(startX, startY, endX, endY)) { //main movement logic
-        //prevent pieces from being able to cross existing pieces on that path
-        //note: valid path also takes into account pawn edge cases
-        if(!isValidPath(startX, startY, endX, endY)) {
-            qDebug() << "invalid move: current piece is blocked";
-            return;
-        }
-        isValidMove = true;
-    }
-    else if(movingPiece->getLabel() == "Pawn") {
-        //diagonal pawn capture
-        isValidMove = isValidPath(startX, startY, endX, endY);
+    //Check if the player is attempting to castle
+    if(!movingPiece->isValidMove(startX, startY, endX, endY)) {
+        //1. king moves two tiles (on either side of the rook)
+        if(movingPiece->getLabel() == "King" && abs(startY - endY) == 2) {
+            //2. both king & rook have not moved
+            int dirY = (endY > startY) - (endY < startY);
+            int rookPosY = dirY == 1 ? endY + dirY : endY + dirY + dirY;
+            if(movingPiece->getPrevPos()[0] == -1
+                && boardState[endX][rookPosY]
+                && boardState[endX][rookPosY]->getLabel() == "Rook"
+                && boardState[endX][rookPosY]->getPrevPos()[0] == -1) {
+                //3. king + moving tiles should not be under attack
+                if(isSafeMove(movingPiece, startX, startY)
+                    && isSafeMove(movingPiece, startX, startY + dirY)
+                    && isSafeMove(movingPiece, startX, startY + dirY + dirY)) {
+                    qDebug() << "VALID CASTLE";
 
-        //en passant scenario (adjacent movement)
+                    shared_ptr<ChessPiece> rookPiece = boardState[endX][rookPosY];
+                    int endRookY = endY + (dirY * -1);
+
+                    //move king piece
+                    boardState[endX][endY] = movingPiece;
+                    boardState[startX][startY] = nullptr;
+                    movingPiece->setCoordinates(endX, endY);
+
+                    //move rook piece
+                    boardState[endX][endRookY] = boardState[endX][rookPosY];
+                    boardState[endX][rookPosY] = nullptr;
+                    rookPiece->setCoordinates(endX, endRookY);
+
+                    previouslyMoved = movingPiece;
+                    updateDisplay(movingPiece);
+                }
+            }
+        }
+        return;
+    }
+
+    //***************process the move if it is valid *********************
+    //en passant scenario (adjacent movement)
+    bool capturePawn = false;
+    if(movingPiece->getLabel() == "Pawn") {
         //check that the previous piece is a different color and is a pawn
         if(previouslyMoved && previouslyMoved->getColor() != movingPiece->getColor() && previouslyMoved->getLabel() == "Pawn") {
             std::array<int, 2> prevCoords = previouslyMoved->getPrevPos();
             std::array<int, 2> currCoords = previouslyMoved->getCurrPos();
 
-            //check if it has moved 2 tiles (opening up for enpassant)
+            //check if the previous pawn has moved 2 tiles (opening up for enpassant)
             if(!boardState[endX][endY] && abs(currCoords[0] - prevCoords[0]) == 2) {
                 //check if the move point is on the same row & same column as opponent pawn
                 if(currCoords[0] == startX && currCoords[1] == endY && abs(startY - endY) == 1) {
@@ -103,71 +126,81 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
                     if((movingPiece->getColor() == "white" && endX == startX - 1) ||
                         (movingPiece->getColor() == "black" && endX == startX + 1)) {
                         //capture pawn
-                        isValidMove = true;
                         capturePawn = true;
                     }
                 }
             }
         }
     }
-    //todo: create additional condition for castle (swap positions)
 
-    //process the move if it is valid (isValidMove -> true, or en passant scenario)
-    if(isValidMove) {
+    //prevent pieces from being able to cross existing pieces on that path
+    if(!isValidPath(startX, startY, endX, endY) && !capturePawn) {
+        qDebug() << "invalid move: current path is blocked";
+        return;
+    }
 
-        //capture pawn on en passant & verify if move does not place king in check
-        if(capturePawn) {
-            std::array<int, 2> currCoords = previouslyMoved->getCurrPos();
-            shared_ptr<ChessPiece> tempPawn = boardState[currCoords[0]][currCoords[1]];
-            boardState[currCoords[0]][currCoords[1]] = nullptr;
-            if(!isSafeMove(movingPiece, endX, endY)) {
-                qDebug() << "error: non-safe en passant";
-                boardState[currCoords[0]][currCoords[1]] = tempPawn;
-                return;
-            }
-        }
-        else if(!isSafeMove(movingPiece, endX, endY)) { //verify if the current move is safe (not placing king in check)
-            qDebug() << "error: king is in check";
+    //verify if the current move is safe (not placing king in check)
+    if(!isSafeMove(movingPiece, endX, endY)) {
+        qDebug() << "error: Current move will place king in check";
+        return;
+    }
+
+    //************* play the current move (move is valid) *************
+    //capture pawn on en passant & verify if move does not place king in check
+    if(capturePawn) {
+        std::array<int, 2> currCoords = previouslyMoved->getCurrPos();
+        shared_ptr<ChessPiece> tempPawn = boardState[currCoords[0]][currCoords[1]];
+        boardState[currCoords[0]][currCoords[1]] = nullptr;
+        if(!isSafeMove(movingPiece, endX, endY)) {
+            qDebug() << "error: En passant capture places king in check";
+            boardState[currCoords[0]][currCoords[1]] = tempPawn;
             return;
         }
-
-        //pawn promotion
-        //todo: give the player the option to change pawn into queen, rook, bishop, or knight
-        //note: create an additional UI popup for when selecting promotion piece
-        if (movingPiece->getLabel() == "Pawn" && (endX == boardState.size() - 1 || endX == 0)) {
-            QString color = movingPiece->getColor();
-            movingPiece = make_shared<Queen>(color, endX, endY);//new Queen(color, endX, endY);
-        }
-
-        //play the current move (update boardState & display)
-        boardState[endX][endY] = movingPiece;
-        boardState[startX][startY] = nullptr;
-
-        //update the moving piece coordinates
-        movingPiece->setCoordinates(endX, endY);
-        previouslyMoved = movingPiece;
-
-        //display the current move taken
-        char charVal = endY + 'a';
-        char numVal = abs(endX - 7) + '1';
-        QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
-        QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
-
-        //verify if the opponent has any safe moves (to prevent checkmate)
-        //todo: create gameOver() function to display winner
-        if(isCheckMate(movingPiece->getColor() == "white" ? "black" : "white")) {
-            qDebug() << "Checkmated by: " << movingPiece->getColor();
-        }
-
-        //todo: check for stale mate (no legal moves left, but king not in check)
-        if(isStaleMate(movingPiece->getColor() == "white" ? "black" : "white")) {
-            qDebug() <<  "stale mate";
-        }
-
-        //update board & move display
-        emit boardUpdated(boardState);
-        emit moveUpdated(pieceID, coords);
     }
+
+    //pawn promotion if the pawn reaches the end of the board
+    //todo: give the player the option to change pawn into queen, rook, bishop, or knight
+    //note: create an additional UI popup for when selecting promotion piece
+    if (movingPiece->getLabel() == "Pawn" && (endX == boardState.size() - 1 || endX == 0)) {
+        QString color = movingPiece->getColor();
+        movingPiece = make_shared<Queen>(color, endX, endY);//new Queen(color, endX, endY);
+    }
+
+    //update boardState & display
+    boardState[endX][endY] = movingPiece;
+    boardState[startX][startY] = nullptr;
+
+    //update the moving piece coordinates
+    movingPiece->setCoordinates(endX, endY);
+    previouslyMoved = movingPiece;
+
+    //update the current display (move played + potential checkmate/stalemate)
+    updateDisplay(movingPiece);
+}
+
+void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
+    int endX = movingPiece->getCurrPos()[0];
+    int endY = movingPiece->getCurrPos()[1];
+    //display the current move taken
+    char charVal = endY + 'a';
+    char numVal = abs(endX - 7) + '1';
+    QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
+    QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
+
+    //verify if the opponent has any safe moves (to prevent checkmate)
+    //todo: create gameOver() function to display winner
+    if(isCheckMate(movingPiece->getColor() == "white" ? "black" : "white")) {
+        qDebug() << "Checkmated by: " << movingPiece->getColor();
+    }
+
+    //todo: check for stale mate (no legal moves left, but king not in check)
+    if(isStaleMate(movingPiece->getColor() == "white" ? "black" : "white")) {
+        qDebug() <<  "stale mate";
+    }
+
+    //update board & move display
+    emit boardUpdated(boardState);
+    emit moveUpdated(pieceID, coords);
 }
 
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
@@ -175,11 +208,10 @@ bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
 
     //pawn pathing
     if (boardState[startX][startY]->getLabel() == "Pawn") {
-        // can move two tiles forward if path isnt blocked
+        // moving two tiles forward if path isnt blocked
         if(abs(endX - startX) == 2 && boardState[startX][startY]->getPrevPos()[0] == -1) {
             int midX = (startX + endX) / 2;
             if (!boardState[midX][startY] && !boardState[endX][endY]) {
-                qDebug() << "invalid 2 tile move: pawn is blocked by a piece";
                 return true;
             }
         }
@@ -187,7 +219,6 @@ bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
         if (abs(startX - endX) == 1 && startY == endY && !boardState[endX][endY]) {
             return true;
         }
-
         // move diagonally if there is an enemy piece to capture
         if(boardState[startX][startY]->getLabel() == "Pawn"
             && (abs(startX - endX) == 1 && (endY == startY + 1 || endY == startY - 1))
@@ -258,7 +289,7 @@ bool ChessBoard::isSafeMove(shared_ptr<ChessPiece> movingPiece, int endX, int en
     boardState[currCoords[0]][currCoords[1]] = nullptr;  // Clear old position
 
     //get the coordinates of the current king
-    shared_ptr<King> kingPiece = this->blackKing;
+    shared_ptr<ChessPiece> kingPiece = this->blackKing;
     QString oppColor = "white";
     if(movingPiece->getColor() == "white") {
         kingPiece = this->whiteKing;
@@ -338,7 +369,7 @@ int ChessBoard::possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList) {
                 if(piece->isValidMove(startX, startY, endX, endY)
                     && isValidPath(startX, startY, endX, endY)
                     && isSafeMove(piece, endX, endY)) {
-                        qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << endX << endY;
+                        //qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << endX << endY;
                         validMoveCount++;
                 }
             }
@@ -351,7 +382,7 @@ int ChessBoard::possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList) {
 // Verifies that the current color (player) has a move to get out of check
 // note: Checkmate Verification
 bool ChessBoard::isCheckMate(QString color) {
-    shared_ptr<King> kingPiece = (color == "white") ? whiteKing : blackKing;
+    shared_ptr<ChessPiece> kingPiece = (color == "white") ? whiteKing : blackKing;
 
     //verify that the king is in check
     if(!isPieceInCheck(kingPiece)) {
