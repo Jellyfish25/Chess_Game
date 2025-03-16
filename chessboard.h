@@ -22,7 +22,8 @@ Q_OBJECT
 public:
     ChessBoard():
         boardState(8, QVector<std::shared_ptr<ChessPiece>>(8, nullptr)),
-        previouslyMoved(nullptr) {}
+        previouslyMoved(nullptr),
+        turnCounter(0){}
     ~ChessBoard(){};
     void initializeBoard();
 
@@ -32,6 +33,7 @@ signals: //notify UI to update board & move displays
 
 public slots:
     void handleMove(int startX, int startY, int endX, int endY);
+    bool isPlayerTurn(int posX, int posY);
 
 private:
     QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;
@@ -47,5 +49,7 @@ private:
 
     int possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList);
     void updateDisplay(std::shared_ptr<ChessPiece> movingPiece);
+
+    int turnCounter;
 };
 #endif // CHESSBOARD_H

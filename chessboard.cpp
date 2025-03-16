@@ -2,21 +2,13 @@
 
 /*
  * To do:
- *  1.implement castle logic
- *      * King cannot be in check before castling
- *      * King cannot move through or end in check
- *          - isSafeMove (for each tile up to the rook tile)
- *      * King + Rook should not have moved
- *          - check previous coordinates, should be -1,-1
- *      * No pieces exist between the path
- *          - isValidPath
- *  2.verify gameplay correctness + edge cases
+ *  1. verify gameplay correctness + edge cases
  *      * create test cases
  *      * note: can begin prior to step 1
- *  3.Implement peer-to-peer connectivity, locking boardstate based on current turn
- *  4. stale mate:
- *      * king is not in check, but can only move king
- *      * verify that no pieces can be moved (without placing king in check)
+ *  2. update GUI for piece promotion (allowing user to promote to queen/knight/bishop/rook
+ *  3. update GUI to display Winner/Loser message popup on checkmate (using notifications)
+ *  4. update GUI to be dynamic (adjustable/scrollable)
+ *  5. Implement peer-to-peer connectivity, locking boardstate based on current turn
  */
 
 void ChessBoard::initializeBoard() {
@@ -179,6 +171,8 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 }
 
 void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
+    turnCounter++; //increment turn counter
+
     int endX = movingPiece->getCurrPos()[0];
     int endY = movingPiece->getCurrPos()[1];
     //display the current move taken
@@ -219,9 +213,12 @@ bool ChessBoard::isValidPath(int startX, int startY, int endX, int endY) {
         if (abs(startX - endX) == 1 && startY == endY && !boardState[endX][endY]) {
             return true;
         }
-        // move diagonally if there is an enemy piece to capture
+
+        // verify that there is an enemy piece to capture on diagonal move
+        int dirY = (boardState[startX][startY]->getColor() == "black") ? 1 : -1;
         if(boardState[startX][startY]->getLabel() == "Pawn"
-            && (abs(startX - endX) == 1 && (endY == startY + 1 || endY == startY - 1))
+            && endX == startX + dirY
+            && abs(startY - endY) == 1
             && boardState[endX][endY]
             && boardState[startX][startY]->getColor() != boardState[endX][endY]->getColor()) {
             return true;
@@ -369,7 +366,7 @@ int ChessBoard::possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList) {
                 if(piece->isValidMove(startX, startY, endX, endY)
                     && isValidPath(startX, startY, endX, endY)
                     && isSafeMove(piece, endX, endY)) {
-                        //qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << endX << endY;
+                        qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << startX << startY << "to: " << endX << endY;
                         validMoveCount++;
                 }
             }
@@ -432,6 +429,23 @@ bool ChessBoard::isStaleMate(QString color) {
     //verify that the player has no valid moves left (excluding king)
     int validMoves = possibleMoves(playerPieces);
     if(validMoves > 0) {
+        return false;
+    }
+
+    return true;
+}
+
+bool ChessBoard::isPlayerTurn(int posX, int posY) {
+    shared_ptr<ChessPiece> currPiece = boardState[posX][posY];
+    if(!currPiece) {
+        return false;
+    }
+
+    if(turnCounter % 2 == 0 && currPiece->getColor() != "white") {
+        return false;
+    }
+
+    if(turnCounter % 2 == 1 && currPiece->getColor() != "black") {
         return false;
     }
 

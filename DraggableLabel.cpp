@@ -7,6 +7,15 @@ DraggableLabel::DraggableLabel(shared_ptr<ChessBoard> chessBoard, QWidget *paren
 
 void DraggableLabel::mousePressEvent(QMouseEvent *event) {
     if (!pixmap().isNull()) {
+        int posX = this->property("posX").toInt();
+        int posY = this->property("posY").toInt();
+
+        // Check if it's the player's turn
+        if (!chessBoard->isPlayerTurn(posX, posY)) {
+            qDebug() << "Not the current player's turn!";
+            return; // Prevent drag
+        }
+
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData();
 
