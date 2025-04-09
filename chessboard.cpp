@@ -1,14 +1,15 @@
 #include "chessboard.h"
-
+#include <QDialog>
+#include <QPushButton>
+#include <Qlabel>
 /*
  * To do:
  *  1. verify gameplay correctness + edge cases
  *      * create test cases
  *      * note: can begin prior to step 1
- *  2. update GUI for piece promotion (allowing user to promote to queen/knight/bishop/rook
- *  3. update GUI to display Winner/Loser message popup on checkmate (using notifications)
+ *  2. update GUI to display Winner/Loser message popup on checkmate (using notifications)
+ *  3. Implement peer-to-peer connectivity, locking boardstate based on current turn
  *  4. update GUI to be dynamic (adjustable/scrollable)
- *  5. Implement peer-to-peer connectivity, locking boardstate based on current turn
  */
 
 void ChessBoard::initializeBoard() {
@@ -49,9 +50,67 @@ void ChessBoard::initializeBoard() {
     //initialize board
     //updateBoardDisplay(boardState);
     emit boardUpdated(boardState);
+    // connects the Promote button (notifies that the user wants to promote pawn)
+    connect(ui->pushButton, &QPushButton::clicked, &loop, &QEventLoop::quit);
+}
+
+// note: this can be readjusted to create a pop up for winning/losing (future)
+void ChessBoard::promoNotification(int row, int col) {
+    QApplication::processEvents();
+    QDialog *popup = new QDialog(mainWindow);
+    popup->setWindowTitle("Pawn Promotion");
+
+    popup->setWindowFlags(Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    popup->setModal(true); // Makes it block interaction with the main window
+    popup->setFixedSize(160, 40);
+
+    // Layout to display promotion options
+    QHBoxLayout *layout = new QHBoxLayout(popup);
+    layout->setSpacing(0);  // No spacing between buttons
+    layout->setContentsMargins(0, 0, 0, 0);  // No margins to ensure tight packing
+
+    // Create buttons for each promotion option (Queen, Rook, Bishop, Knight)
+    QPushButton *queenBtn = new QPushButton(popup);
+    QPushButton *rookBtn = new QPushButton(popup);
+    QPushButton *bishopBtn = new QPushButton(popup);
+    QPushButton *knightBtn = new QPushButton(popup);
+
+    // Set images (pieces) for each button
+    Queen* q = new Queen("white", 0, 0);
+    Rook* r = new Rook("white", 0, 0);
+    Bishop* b = new Bishop("white", 0, 0);
+    Knight* k = new Knight("white", 0, 0);
+
+    queenBtn->setIcon(QPixmap::fromImage(q->getImage()));
+    rookBtn->setIcon(QPixmap::fromImage(r->getImage()));
+    bishopBtn->setIcon(QPixmap::fromImage(b->getImage()));
+    knightBtn->setIcon(QPixmap::fromImage(k->getImage()));
+
+    // Set the icon size to fit the buttons (optional)
+    queenBtn->setIconSize(QSize(40, 40)); // Adjust size as needed
+    rookBtn->setIconSize(QSize(40, 40));
+    bishopBtn->setIconSize(QSize(40, 40));
+    knightBtn->setIconSize(QSize(40, 40));
+
+    // Add buttons to layout
+    layout->addWidget(queenBtn);
+    layout->addWidget(rookBtn);
+    layout->addWidget(bishopBtn);
+    layout->addWidget(knightBtn);
+
+    // Move the popup to the calculated global position
+    QPoint p = mainWindow->pos();
+    p.setX(2.5*p.x() + 40);
+    p.setY(p.y() + 40);
+    // Move the popup to the calculated position
+    popup->move(p);
+    popup->show();
 }
 
 void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
+    if(promoRef != nullptr) {
+        qDebug() << "promo button selected: " << promoRef->objectName();
+    }
     //verify that the new coordinates are within the boardState
     if(endX >= boardState.size() || endY >= boardState[0].size()) {
         return;
@@ -152,10 +211,27 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 
     //pawn promotion if the pawn reaches the end of the board
     //todo: give the player the option to change pawn into queen, rook, bishop, or knight
-    //note: create an additional UI popup for when selecting promotion piece
     if (movingPiece->getLabel() == "Pawn" && (endX == boardState.size() - 1 || endX == 0)) {
         QString color = movingPiece->getColor();
-        movingPiece = make_shared<Queen>(color, endX, endY);//new Queen(color, endX, endY);
+
+        // if the radio button (auto promote) is not active, wait until user clicks "Promote"
+        if(!ui->radioButton->isChecked()) {
+            loop.exec();
+        }
+
+        QString promoPieceName = this->promoRef->objectName();
+        if(promoPieceName == "knight") {
+            movingPiece = make_shared<Knight>(color, endX, endY);
+        }
+        else if(promoPieceName == "rook") {
+            movingPiece = make_shared<Rook>(color, endX, endY);
+        }
+        else if(promoPieceName == "bishop") {
+            movingPiece = make_shared<Bishop>(color, endX, endY);
+        }
+        else {
+            movingPiece = make_shared<Queen>(color, endX, endY);
+        }
     }
 
     //update boardState & display

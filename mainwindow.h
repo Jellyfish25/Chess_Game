@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow{
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    QPushButton *promoButton = nullptr;
 
 public slots:
     void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
@@ -34,5 +35,17 @@ private:
     Ui::MainWindow *ui;
     QStandardItemModel *model;
     std::shared_ptr<ChessBoard> chessBoard;
+    void menuDisplay(QString color);
+    const QString buttonStyleSheet =
+        "QPushButton {"
+        "   background-color: white;"
+        "   border: none;"
+        "   padding: 10px;"
+        "   border-radius: 5px;"
+        "}"
+
+        "QPushButton:hover {"
+        "   background-color: orange;"
+        "}";
 };
 #endif // MAINWINDOW_H

@@ -15,7 +15,6 @@ void DraggableLabel::mousePressEvent(QMouseEvent *event) {
             qDebug() << "Not the current player's turn!";
             return; // Prevent drag
         }
-
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData();
 

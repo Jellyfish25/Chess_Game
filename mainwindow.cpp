@@ -1,13 +1,15 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "DraggableLabel.h"
+#include <QDialog>
+#include <QPushButton>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , model(new QStandardItemModel())
     , boardState(8, QVector<std::shared_ptr<ChessPiece>>(8, nullptr))
-    , chessBoard(std::make_shared<ChessBoard>())
+    , chessBoard(std::make_shared<ChessBoard>(this, this->ui, this->promoButton))
 {
     ui->setupUi(this);
     ui->gridLayout->setSpacing(0);
@@ -15,9 +17,101 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(chessBoard.get(), &ChessBoard::boardUpdated, this, &MainWindow::updateBoardDisplay);
     connect(chessBoard.get(), &ChessBoard::moveUpdated, this, &MainWindow::updateMovesDisplay);
-
     chessBoard->initializeBoard();
+
+    //queenBtn->setStyleSheet("background-color: green;");
     //todo: make GUI scrollable + dynamically scale
+
+    // set the pawn promotion UI
+    menuDisplay("white");
+}
+
+// creates the pawn promotion menu display
+void MainWindow::menuDisplay(QString color) {
+    // adjust radio button
+    QRadioButton *radioBtn = ui->radioButton;
+    const QString radioStyleSheet =
+        "QRadioButton::indicator:checked {"
+        "border: 1px solid gray;"
+        "border-radius: 7px;"
+        "background-color: green;"
+        "}";
+    radioBtn->setStyleSheet(radioStyleSheet);
+
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    QPushButton *queenBtn = new QPushButton();
+    QPushButton *rookBtn = new QPushButton();
+    QPushButton *bishopBtn = new QPushButton();
+    QPushButton *knightBtn = new QPushButton();
+
+    // Set piece image & size for each button
+    unique_ptr<Queen> q = std::make_unique<Queen>(color, 0, 0);
+    unique_ptr<Rook> r = std::make_unique<Rook>(color, 0, 0);
+    unique_ptr<Bishop> b = std::make_unique<Bishop>(color, 0, 0);
+    unique_ptr<Knight> k = std::make_unique<Knight>(color, 0, 0);
+
+    queenBtn->setIcon(QPixmap::fromImage(q->getImage()));
+    rookBtn->setIcon(QPixmap::fromImage(r->getImage()));
+    bishopBtn->setIcon(QPixmap::fromImage(b->getImage()));
+    knightBtn->setIcon(QPixmap::fromImage(k->getImage()));
+
+    queenBtn->setIconSize(QSize(40, 40));
+    rookBtn->setIconSize(QSize(40, 40));
+    bishopBtn->setIconSize(QSize(40, 40));
+    knightBtn->setIconSize(QSize(40, 40));
+
+    // Update the currently selected promo button (default to queen)
+    if(promoButton == NULL) {
+        promoButton = queenBtn;
+    }
+
+    // adjust stylesheet for each button
+    queenBtn->setStyleSheet(this->buttonStyleSheet);
+    queenBtn->setObjectName("queen");
+    rookBtn->setStyleSheet(this->buttonStyleSheet);
+    rookBtn->setObjectName("rook");
+    bishopBtn->setStyleSheet(this->buttonStyleSheet);
+    bishopBtn->setObjectName("bishop");
+    knightBtn->setStyleSheet(this->buttonStyleSheet);
+    knightBtn->setObjectName("knight");
+
+    buttonLayout->addWidget(queenBtn);
+    buttonLayout->addWidget(rookBtn);
+    buttonLayout->addWidget(bishopBtn);
+    buttonLayout->addWidget(knightBtn);
+
+    // add select functionality
+    auto selectButton = [this](QPushButton* selected) {
+        if(promoButton != NULL) {
+            promoButton->setStyleSheet(this->buttonStyleSheet);
+        }
+        selected->setStyleSheet("QPushButton {"
+                                "   background-color: Green;"
+                                "   border: none;"
+                                "   padding: 10px;"
+                                "   border-radius: 5px;"
+                                "}"
+
+                                "QPushButton:hover {"
+                                "   background-color: orange;"
+                                "}");
+        promoButton = selected;
+    };
+
+    connect(queenBtn, &QPushButton::clicked, this, [this, queenBtn, selectButton]() {
+        selectButton(queenBtn);
+    });
+    connect(rookBtn, &QPushButton::clicked, this, [this, rookBtn, selectButton]() {
+        selectButton(rookBtn);
+    });
+    connect(bishopBtn, &QPushButton::clicked, this, [this, bishopBtn, selectButton]() {
+        selectButton(bishopBtn);
+    });
+    connect(knightBtn, &QPushButton::clicked, this, [this, knightBtn, selectButton]() {
+        selectButton(knightBtn);
+    });
+
+    ui->horizontalLayout->addLayout(buttonLayout);
 }
 
 //paints the board state on update, can be further optimized

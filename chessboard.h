@@ -10,9 +10,11 @@
 #include "Bishop.cpp"
 #include "Queen.cpp"
 #include "King.cpp"
+#include "./ui_mainwindow.h"
 
 using std::make_shared;
 using std::shared_ptr;
+using std::unique_ptr;
 
 //contains the board state and movement logic
 class ChessBoard : public QObject
@@ -20,12 +22,20 @@ class ChessBoard : public QObject
 Q_OBJECT
 
 public:
-    ChessBoard():
+ChessBoard(QMainWindow* parentWindow, Ui::MainWindow* parentUi, QPushButton* &promoRef):
         boardState(8, QVector<std::shared_ptr<ChessPiece>>(8, nullptr)),
         previouslyMoved(nullptr),
-        turnCounter(0){}
+        turnCounter(0),
+        mainWindow(parentWindow),
+        ui(parentUi),
+        promoRef(promoRef){}
+
     ~ChessBoard(){};
     void initializeBoard();
+    QMainWindow *mainWindow;
+    Ui::MainWindow *ui;
+    QPushButton* &promoRef;
+    QEventLoop loop;
 
 signals: //notify UI to update board & move displays
     void boardUpdated(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
@@ -49,7 +59,7 @@ private:
 
     int possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList);
     void updateDisplay(std::shared_ptr<ChessPiece> movingPiece);
-
+    void promoNotification(int row, int col);
     int turnCounter;
 };
 #endif // CHESSBOARD_H
