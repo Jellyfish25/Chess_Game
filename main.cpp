@@ -1,19 +1,26 @@
 #include "mainwindow.h"
+#include "sockethandler.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
-    //can also just call Pawn pawnStars("white") to allocate it on stack instead of heap
-    //dont have to manually delete the object
-    // Pawn *pawnStars = new Pawn("white");
-    // qDebug() << pawnStars->getColor() << Qt::endl;
-    // qDebug() << pawnStars->isValid(0, 0, 0, 1) << Qt::endl;
-    // qDebug() << pawnStars->getImage().isNull();
-    // qDebug() << pawnStars->getLabel();
-    //delete pawnStars;
-
     QApplication a(argc, argv);
+    // initialize the handler
+    // note: don't initialize mainwindow/chessboard if the user exits the application
+    SocketHandler handler;
+    if(handler.displayMenuOptions() != QDialog::Accepted) {
+        return 0;
+    }
+
+    // display the main window (chess logic)
+    // mainwindow constructs the board and displays the moves played
     MainWindow w;
+
+    // give the sockethandler a reference to the chessboard to relay moves
+    handler.setChessBoard(w.getBoard());
     w.show();
+
+    // on exit, close the server
+    QObject::connect(&a, &QApplication::aboutToQuit, &handler, &SocketHandler::closeServer);
     return a.exec();
 }

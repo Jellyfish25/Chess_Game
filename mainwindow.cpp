@@ -21,13 +21,21 @@ MainWindow::MainWindow(QWidget *parent)
 
     //queenBtn->setStyleSheet("background-color: green;");
     //todo: make GUI scrollable + dynamically scale
+    pawnPromoDisplay("white");
+}
 
-    // set the pawn promotion UI
-    menuDisplay("white");
+// initial popup display to prompt the user if they want to host, connect, or play locally
+// note: instead of QDialog, create another page and display it until user initializes the game (QStackedWidget)
+void MainWindow::menuDisplay() {
+    QDialog *popup = new QDialog(this);
+    popup->setWindowTitle("Pawn Promotion");
+
+    // stall until exit
+    popup->exec();
 }
 
 // creates the pawn promotion menu display
-void MainWindow::menuDisplay(QString color) {
+void MainWindow::pawnPromoDisplay(QString color) {
     // adjust radio button
     QRadioButton *radioBtn = ui->radioButton;
     const QString radioStyleSheet =
@@ -153,9 +161,9 @@ void MainWindow::updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>
 }
 
 // update what was currently played in the "Played Moves" window
-void MainWindow::updateMovesDisplay(QString pieceID, QString coords) {
+void MainWindow::updateMovesDisplay(QString pieceID, QString startCoords, QString endCoords) {
     // testing function to display current steps
-    QStandardItem *currentMove = new QStandardItem(pieceID + " " + coords);
+    QStandardItem *currentMove = new QStandardItem(pieceID + ": " + startCoords + "->" + endCoords);
     currentMove->setFlags(currentMove->flags() & ~Qt::ItemIsEditable);
     model->appendRow(currentMove);
     ui->listView->setModel(model);

@@ -2,6 +2,7 @@
 #include <QDialog>
 #include <QPushButton>
 #include <Qlabel>
+
 /*
  * To do:
  *  1. verify gameplay correctness + edge cases
@@ -52,20 +53,21 @@ void ChessBoard::initializeBoard() {
     emit boardUpdated(boardState);
     // connects the Promote button (notifies that the user wants to promote pawn)
     connect(ui->pushButton, &QPushButton::clicked, &loop, &QEventLoop::quit);
+    //promoNotification(0,0);
 }
 
 // note: this can be readjusted to create a pop up for winning/losing (future)
 void ChessBoard::promoNotification(int row, int col) {
-    QApplication::processEvents();
+    // QApplication::processEvents();
     QDialog *popup = new QDialog(mainWindow);
     popup->setWindowTitle("Pawn Promotion");
 
     popup->setWindowFlags(Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     popup->setModal(true); // Makes it block interaction with the main window
-    popup->setFixedSize(160, 40);
+    popup->setFixedSize(40, 160);
 
     // Layout to display promotion options
-    QHBoxLayout *layout = new QHBoxLayout(popup);
+    QVBoxLayout *layout = new QVBoxLayout(popup);
     layout->setSpacing(0);  // No spacing between buttons
     layout->setContentsMargins(0, 0, 0, 0);  // No margins to ensure tight packing
 
@@ -122,9 +124,11 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
         return;
     }
 
-    //Check if the player is attempting to castle
+    // Check if the player is attempting to castle
+    // fix castle logic (queen side castle, king side castle)
     if(!movingPiece->isValidMove(startX, startY, endX, endY)) {
         //1. king moves two tiles (on either side of the rook)
+        // note: can initiate castle with rook (not just king)
         if(movingPiece->getLabel() == "King" && abs(startY - endY) == 2) {
             //2. both king & rook have not moved
             int dirY = (endY > startY) - (endY < startY);
@@ -249,13 +253,24 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
 void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
     turnCounter++; //increment turn counter
 
+    //display the current move taken
+    std::array<int, 2> curr = movingPiece->getPrevPos();
+    int startX = curr[0];
+    int startY = curr[1];
+    char startCharVal = startY + 'a';
+    char startNumVal = abs(startX - 7) + '1';
+
     int endX = movingPiece->getCurrPos()[0];
     int endY = movingPiece->getCurrPos()[1];
-    //display the current move taken
-    char charVal = endY + 'a';
-    char numVal = abs(endX - 7) + '1';
-    QString coords = QString("(" + QString(charVal) + QString(numVal) + ")");
-    QString pieceID = QString(movingPiece->getColor() + " " + movingPiece->getLabel());
+    char endCharVal = endY + 'a';
+    char endNumVal = abs(endX - 7) + '1';
+
+    QString startCoords = QString("(" + QString(startCharVal) + QString(startNumVal) + ")");
+    QString endCoords = QString("(" + QString(endCharVal) + QString(endNumVal) + ")");
+
+    QString color = movingPiece->getColor();
+    color[0] = color[0].toUpper();
+    QString pieceID = QString(color + " " + movingPiece->getLabel());
 
     //verify if the opponent has any safe moves (to prevent checkmate)
     //todo: create gameOver() function to display winner
@@ -268,9 +283,11 @@ void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
         qDebug() <<  "stale mate";
     }
 
-    //update board & move display
+    // update board & move display
     emit boardUpdated(boardState);
-    emit moveUpdated(pieceID, coords);
+    emit moveUpdated(pieceID, startCoords, endCoords);
+    // send the played coordinates to the other player utilizing socket handler class
+    emit sendCoordinates(movingPiece->getPrevPos(), movingPiece->getCurrPos());
 }
 
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)

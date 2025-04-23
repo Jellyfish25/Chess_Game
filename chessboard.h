@@ -37,9 +37,12 @@ ChessBoard(QMainWindow* parentWindow, Ui::MainWindow* parentUi, QPushButton* &pr
     QPushButton* &promoRef;
     QEventLoop loop;
 
-signals: //notify UI to update board & move displays
+signals:
+    // notify UI to update board & move displays
     void boardUpdated(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
-    void moveUpdated(QString pieceID, QString coords);
+    void moveUpdated(QString pieceID, QString startCoords, QString endCoords);
+    // sends the current move's coordinates to the socket handler
+    void sendCoordinates(std::array<int, 2> startCoords, std::array<int, 2> endCoords);
 
 public slots:
     void handleMove(int startX, int startY, int endX, int endY);
