@@ -75,13 +75,13 @@ void MainWindow::pawnPromoDisplay(QString color) {
 
     // adjust stylesheet for each button
     queenBtn->setStyleSheet(this->buttonStyleSheet);
-    queenBtn->setObjectName("queen");
+    queenBtn->setObjectName("Queen");
     rookBtn->setStyleSheet(this->buttonStyleSheet);
-    rookBtn->setObjectName("rook");
+    rookBtn->setObjectName("Rook");
     bishopBtn->setStyleSheet(this->buttonStyleSheet);
-    bishopBtn->setObjectName("bishop");
+    bishopBtn->setObjectName("Bishop");
     knightBtn->setStyleSheet(this->buttonStyleSheet);
-    knightBtn->setObjectName("knight");
+    knightBtn->setObjectName("Knight");
 
     buttonLayout->addWidget(queenBtn);
     buttonLayout->addWidget(rookBtn);

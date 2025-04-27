@@ -63,6 +63,7 @@ void DraggableLabel::dropEvent(QDropEvent *event) {
 
     // Now call the handleMove function
     //mainWindow->handleMove(startX, startY, endX, endY);
-    chessBoard->handleMove(startX, startY, endX, endY);
+    // play the move locally
+    chessBoard->handleMove(startX, startY, endX, endY, false);
     event->acceptProposedAction();
 }

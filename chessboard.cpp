@@ -109,10 +109,35 @@ void ChessBoard::promoNotification(int row, int col) {
     popup->show();
 }
 
-void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
-    if(promoRef != nullptr) {
-        qDebug() << "promo button selected: " << promoRef->objectName();
+shared_ptr<ChessPiece> ChessBoard::createPromoPiece(int endX, int endY, QString color, QString pieceType) {
+    shared_ptr<ChessPiece> promoPiece;
+    if(pieceType == "Knight") {
+        promoPiece = make_shared<Knight>(color, endX, endY);
     }
+    else if(pieceType == "Rook") {
+        promoPiece = make_shared<Rook>(color, endX, endY);
+    }
+    else if(pieceType == "Bishop") {
+        promoPiece = make_shared<Bishop>(color, endX, endY);
+    }
+    else {
+        promoPiece = make_shared<Queen>(color, endX, endY);
+    }
+    return promoPiece;
+}
+
+void ChessBoard::handleMove(int startX, int startY, int endX, int endY, bool fromNetwork, QString promoType) {
+    // verify it is the current players turn
+    qDebug() << "player color: " << playerColor;
+    // Verify that the it is the current player's turn (if the move is received locally in a p2p session)
+    if(!isLocal && !fromNetwork) {
+        if((turnCounter % 2 == 0 && playerColor == "black") ||
+            (turnCounter % 2 == 1 && playerColor == "white")) {
+            qDebug() << "Blocked: Not your turn";
+            return;
+        }
+    }
+
     //verify that the new coordinates are within the boardState
     if(endX >= boardState.size() || endY >= boardState[0].size()) {
         return;
@@ -214,28 +239,19 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
     }
 
     //pawn promotion if the pawn reaches the end of the board
-    //todo: give the player the option to change pawn into queen, rook, bishop, or knight
     if (movingPiece->getLabel() == "Pawn" && (endX == boardState.size() - 1 || endX == 0)) {
-        QString color = movingPiece->getColor();
-
         // if the radio button (auto promote) is not active, wait until user clicks "Promote"
-        if(!ui->radioButton->isChecked()) {
+        // note: if its a move recieved from the network, don't need to select a promo type
+        if(!fromNetwork && !ui->radioButton->isChecked()) {
             loop.exec();
         }
-
+        QString color = movingPiece->getColor();
         QString promoPieceName = this->promoRef->objectName();
-        if(promoPieceName == "knight") {
-            movingPiece = make_shared<Knight>(color, endX, endY);
+        // If the move is from the network, create a promo piece based on the recieved type
+        if(fromNetwork) {
+            promoPieceName = promoType;
         }
-        else if(promoPieceName == "rook") {
-            movingPiece = make_shared<Rook>(color, endX, endY);
-        }
-        else if(promoPieceName == "bishop") {
-            movingPiece = make_shared<Bishop>(color, endX, endY);
-        }
-        else {
-            movingPiece = make_shared<Queen>(color, endX, endY);
-        }
+        movingPiece = createPromoPiece(startX, startY, color, promoPieceName);
     }
 
     //update boardState & display
@@ -246,10 +262,11 @@ void ChessBoard::handleMove(int startX, int startY, int endX, int endY) {
     movingPiece->setCoordinates(endX, endY);
     previouslyMoved = movingPiece;
 
-    //update the current display (move played + potential checkmate/stalemate)
+    // update the current display (move played + potential checkmate/stalemate)
     updateDisplay(movingPiece);
 }
 
+// Updates the display and relays the move played over the network
 void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
     turnCounter++; //increment turn counter
 
@@ -287,7 +304,8 @@ void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
     emit boardUpdated(boardState);
     emit moveUpdated(pieceID, startCoords, endCoords);
     // send the played coordinates to the other player utilizing socket handler class
-    emit sendCoordinates(movingPiece->getPrevPos(), movingPiece->getCurrPos());
+    // note: if there is a local promo, send the promo label
+    emit sendLocalData(movingPiece->getPrevPos(), movingPiece->getCurrPos(), movingPiece->getLabel());
 }
 
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)
@@ -459,7 +477,7 @@ int ChessBoard::possibleMoves(QVector<shared_ptr<ChessPiece>> pieceList) {
                 if(piece->isValidMove(startX, startY, endX, endY)
                     && isValidPath(startX, startY, endX, endY)
                     && isSafeMove(piece, endX, endY)) {
-                        qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << startX << startY << "to: " << endX << endY;
+                        //qDebug() << "safe move: " << piece->getColor() << piece->getLabel() << startX << startY << "to: " << endX << endY;
                         validMoveCount++;
                 }
             }

@@ -37,15 +37,19 @@ ChessBoard(QMainWindow* parentWindow, Ui::MainWindow* parentUi, QPushButton* &pr
     QPushButton* &promoRef;
     QEventLoop loop;
 
+    // player state (online connectivity)
+    QString playerColor;
+    bool isLocal = false;
+
 signals:
     // notify UI to update board & move displays
     void boardUpdated(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     void moveUpdated(QString pieceID, QString startCoords, QString endCoords);
     // sends the current move's coordinates to the socket handler
-    void sendCoordinates(std::array<int, 2> startCoords, std::array<int, 2> endCoords);
+    void sendLocalData(std::array<int, 2> startCoords, std::array<int, 2> endCoords, QString promoType);
 
 public slots:
-    void handleMove(int startX, int startY, int endX, int endY);
+    void handleMove(int startX, int startY, int endX, int endY, bool fromNetwork = false, QString promoType = "");
     bool isPlayerTurn(int posX, int posY);
 
 private:
@@ -53,6 +57,7 @@ private:
     std::shared_ptr<ChessPiece> whiteKing;
     std::shared_ptr<ChessPiece> blackKing;
     shared_ptr<ChessPiece> previouslyMoved;
+    shared_ptr<ChessPiece> createPromoPiece(int endX, int endY, QString color, QString pieceType);
 
     bool isValidPath(int xStart, int yStart, int xEnd, int yEnd);
     bool isSafeMove(std::shared_ptr<ChessPiece> movingPiece, int endX, int endY);

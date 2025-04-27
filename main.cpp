@@ -5,19 +5,16 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    // initialize the handler
-    // note: don't initialize mainwindow/chessboard if the user exits the application
-    SocketHandler handler;
+    // mainwindow constructs the board and displays the moves played
+    MainWindow w;
+
+    // initialize the socket handler to connect & set the board state
+    auto handler = SocketHandler(&w, w.getBoard());
     if(handler.displayMenuOptions() != QDialog::Accepted) {
         return 0;
     }
 
-    // display the main window (chess logic)
-    // mainwindow constructs the board and displays the moves played
-    MainWindow w;
-
-    // give the sockethandler a reference to the chessboard to relay moves
-    handler.setChessBoard(w.getBoard());
+    // display the main window
     w.show();
 
     // on exit, close the server
