@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/Assets">
+        <file>Assets/bB.svg</file>
+        <file>Assets/bK.svg</file>
+        <file>Assets/bN.svg</file>
+        <file>Assets/bP.svg</file>
+        <file>Assets/bQ.svg</file>
+        <file>Assets/bR.svg</file>
+        <file>Assets/victoryRoyale.png</file>
+        <file>Assets/wB.svg</file>
+        <file>Assets/wK.svg</file>
+        <file>Assets/wN.svg</file>
+        <file>Assets/wP.svg</file>
+        <file>Assets/wQ.svg</file>
+        <file>Assets/wR.svg</file>
+    </qresource>
+</RCC>

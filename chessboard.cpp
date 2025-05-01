@@ -289,23 +289,25 @@ void ChessBoard::updateDisplay(shared_ptr<ChessPiece> movingPiece) {
     color[0] = color[0].toUpper();
     QString pieceID = QString(color + " " + movingPiece->getLabel());
 
-    //verify if the opponent has any safe moves (to prevent checkmate)
-    //todo: create gameOver() function to display winner
-    if(isCheckMate(movingPiece->getColor() == "white" ? "black" : "white")) {
-        qDebug() << "Checkmated by: " << movingPiece->getColor();
-    }
-
-    //todo: check for stale mate (no legal moves left, but king not in check)
-    if(isStaleMate(movingPiece->getColor() == "white" ? "black" : "white")) {
-        qDebug() <<  "stale mate";
-    }
-
     // update board & move display
     emit boardUpdated(boardState);
     emit moveUpdated(pieceID, startCoords, endCoords);
     // send the played coordinates to the other player utilizing socket handler class
     // note: if there is a local promo, send the promo label
     emit sendLocalData(movingPiece->getPrevPos(), movingPiece->getCurrPos(), movingPiece->getLabel());
+
+    //verify if the opponent has any safe moves (to prevent checkmate)
+    //todo: create gameOver() function to display winner
+    if(isCheckMate(movingPiece->getColor() == "white" ? "black" : "white")) {
+        qDebug() << "Checkmated by: " << movingPiece->getColor();
+        emit gameWinner(movingPiece->getColor());
+    }
+
+    //todo: check for stale mate (no legal moves left, but king not in check)
+    if(isStaleMate(movingPiece->getColor() == "white" ? "black" : "white")) {
+        qDebug() <<  "stale mate";
+        emit gameWinner("Draw");
+    }
 }
 
 // verify that the path from (startX, startY) -> (endX, endY) is not blocked (Bresenham's line algorithm)

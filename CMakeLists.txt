@@ -34,13 +34,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         Bishop.cpp
         King.cpp
         Queen.cpp
-        DraggableLabel.h
-        DraggableLabel.cpp
+        DraggableLabel.h DraggableLabel.cpp
         chessboard.h chessboard.cpp
         sockethandler.h sockethandler.cpp
-
-
-
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET Chess_Game APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

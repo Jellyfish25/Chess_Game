@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(chessBoard.get(), &ChessBoard::boardUpdated, this, &MainWindow::updateBoardDisplay);
     connect(chessBoard.get(), &ChessBoard::moveUpdated, this, &MainWindow::updateMovesDisplay);
+    //on victory, signals the main window to display the winner
+    connect(chessBoard.get(), &ChessBoard::gameWinner, this, &MainWindow::displayWinner);
     chessBoard->initializeBoard();
 
     //queenBtn->setStyleSheet("background-color: green;");
@@ -167,6 +169,29 @@ void MainWindow::updateMovesDisplay(QString pieceID, QString startCoords, QStrin
     currentMove->setFlags(currentMove->flags() & ~Qt::ItemIsEditable);
     model->appendRow(currentMove);
     ui->listView->setModel(model);
+}
+
+// display the winner of the game
+void MainWindow::displayWinner(QString color) {
+    QDialog winnerWindow;
+    winnerWindow.setWindowTitle("Game Over");
+
+    QLabel *promptMessage = new QLabel("Winner: " + color);
+    promptMessage->setAlignment(Qt::AlignCenter);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(promptMessage);
+    QLabel* victoryImage = new QLabel(this);
+    QImage image("../../Assets/victoryRoyale.png");
+    if(image.isNull()) {
+        qDebug() << "Image failed to load";
+    }
+    QPixmap scaledPixmap = QPixmap::fromImage(image).scaled(400, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    victoryImage->setPixmap(scaledPixmap);
+
+    layout->addWidget(victoryImage);
+    winnerWindow.setLayout(layout);
+    winnerWindow.exec();
 }
 
 MainWindow::~MainWindow()

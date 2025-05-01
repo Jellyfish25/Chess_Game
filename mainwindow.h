@@ -28,6 +28,7 @@ public:
 public slots:
     void updateBoardDisplay(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     void updateMovesDisplay(QString pieceID, QString startCoords, QString endCoords);
+    void displayWinner(QString color);
 
 protected:
     QVector<QVector<std::shared_ptr<ChessPiece>>> boardState;

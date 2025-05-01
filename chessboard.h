@@ -45,6 +45,7 @@ signals:
     // notify UI to update board & move displays
     void boardUpdated(QVector<QVector<std::shared_ptr<ChessPiece>>> boardState);
     void moveUpdated(QString pieceID, QString startCoords, QString endCoords);
+    void gameWinner(QString playerColor);
     // sends the current move's coordinates to the socket handler
     void sendLocalData(std::array<int, 2> startCoords, std::array<int, 2> endCoords, QString promoType);
 

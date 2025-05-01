@@ -9,6 +9,8 @@
  *      1. allow for a client to connect to the server (locally).
  *      2. relay moves played between host & client
  *      3. pawn promotion + network logic working as intended
+ *      4. add winner/loser screen pop ups for both players on a local checkmate move (no network relays req)
+
  * note: use valgrind or gdb to look for dangling pointers
  *
  * to do:
@@ -16,10 +18,8 @@
  *          1.1 move a piece locally and call sendLocalData(ChessPiece piece)
  *          1.2 on sendNetData(ChessPiece piece), serialize the object into a byte stream
  *          1.3 on receieveNetData() deserialize the object and play the move locally: handleMove(prevX, prevY, currX, currY, true, label)
- *      2. test on private networks + public networks, and adjust connectivity code if necessary
- *      3. add winner/loser screen pop ups for both players on a local checkmate move (no network relays req)
- *      4. add the option for the host to restart the game
- *      5. if the host or client closes the game, generate a pop up that the session has been closed
+ *      2. add the option for the host to restart the game (add rematch button, can be called by host or client)
+ *      3. if the host or client closes the game: generate a pop up that the session has been closed or client has quit
 */
 SocketHandler::SocketHandler(QObject *parent, std::shared_ptr<ChessBoard> chessBoard): QObject(parent){
     this->socket = nullptr;
@@ -180,7 +180,6 @@ void SocketHandler::closeServer() {
         qDebug() << "Server is closed.";
         server->close();
     }
-
     //delete server;
     //server = nullptr;
 }
